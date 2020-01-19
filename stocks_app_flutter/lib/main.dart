@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import 'models/stock_list_viewmodel.dart';
+import 'widgets/stock_list.dart';
+import 'package:intl/intl.dart';
 
 void main() => runApp(MyApp());
 
@@ -7,31 +12,83 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
-    );
+        title: "Stocks",
+        home: ChangeNotifierProvider(
+            create: (_) => StockListViewModel(), child: HomePage()));
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key key, this.title}) : super(key: key);
-
-  final String title;
-
+class HomePage extends StatefulWidget {
   @override
-  _MyHomePageState createState() => _MyHomePageState();
+  HomePageState createState() => HomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class HomePageState extends State<HomePage> {
+  StockListViewModel _stockListViewModel;
+
+  @override
+  void initState() {
+    super.initState();
+    _stockListViewModel =
+        Provider.of<StockListViewModel>(context, listen: false);
+    _stockListViewModel.fetchStocks();
+  }
+
+  void _filterStocks(String searchTerm) {
+    _stockListViewModel.search(searchTerm);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-          title: Text(widget.title),
-        ),
-        body: Center());
+        body: Stack(children: <Widget>[
+      Container(
+          padding: EdgeInsets.all(10),
+          width: MediaQuery.of(context).size.width,
+          color: Colors.black,
+          child: SafeArea(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  Text("Stocks",
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold)),
+                  Text("${DateFormat('yyyy-MM-dd').format(DateTime.now())}",
+                      style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold)),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: SizedBox(
+                        height: 50,
+                        child: TextField(
+                          onChanged: (value) {
+                            _filterStocks(value);
+                          },
+                          style: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                              hintStyle: TextStyle(color: Colors.grey[500]),
+                              hintText: "Search",
+                              prefix: Icon(Icons.search),
+                              fillColor: Colors.grey[800],
+                              filled: true,
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                      width: 0, style: BorderStyle.none),
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(16)))),
+                        )),
+                  ),
+                  Expanded(
+                    child: SizedBox(
+                        height: MediaQuery.of(context).size.height - 310,
+                        child: StockList(stocks: _stockListViewModel.stocks)),
+                  )
+                ]),
+          ))
+    ]));
   }
 }
